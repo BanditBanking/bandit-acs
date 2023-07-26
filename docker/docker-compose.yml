@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+
+  bandit-acs:
+    image: bandit-acs
+    build:
+      context: ..
+      dockerfile: src/Bandit.ACS.Daemon/Dockerfile
+    ports:
+      - 6000:6000
+      - 6001:443
+    environment:
+      ACS__BankIdentifier: "bandit-dev-bank"
+      ACS__Analytics__ServerAddress: 172.27.0.3
+      ACS__Analytics__ServerPort: 6002
+      ACS__Analytics__ServerCertificate: "/certs/tristesse.pfx"
+      ACS__Analytics__SyncPeriodInMinutes: 1440
+      ACS__NpgsqlDatabase__DatabaseName: "bandit-acs"
+      ACS__NpgsqlDatabase__ConnectionString: "User ID=bandit;Password=orF9YuPWVajej5tC6cfiro94BoxrzsoE;Host=postgres;Port=5432;Database=bandit-acs;Connection Lifetime=0;"
+      ACS__MgdbDatabase__DatabaseName: "accounts"
+      ACS__MgdbDatabase__ConnectionString: "mongodb://bandit:KQVYJnxcMXvQ5joLef524V97zRkMMT3N@mongo:27017"
+      ACS__SSL__ServerCertificate: "/certs/tristesse.pfx"
+      ACS__TCP__Port: 6000
+      ACS__JWT__LifeSpan: 120
+      ACS__JWT__Key: "MIIBCgKCAQEAsXoUruE3QybI3ygaARBUl0e663kxvylbSqlLBPf/lONUpWNucph5RQK/9WepNS/Z42Y79x+jf6MyPkgpMoLiiYB6Nzm5ssmZHg0ImzLmdyc3enCA0/TNrX8QBqieeLmm4Qja2pgsqtX7ae4En2Mr38qLrrpiMOXRqtxgVYqi+Lv9UxfVkRwHB4C+wc9FkM0IhmCja+AvpvtG7UBskPYLRB8o9gELVggKpV9t48yIEtJXG97BzmH3anEYZJY611NylZ1VUbnFbmRGJjAqF6Gy4bcGJbJrRlEQSGZT7mKKlxEijBR1VjADaQc8YVQXI76q1B3NiBcfvPSOJ+MSszd36QIDAQAB"
+      ACS__JWT__Issuer: "tristesse.lol"
+      ACS__JWT__Audience: "tristesse.lol"
+      ACS__API__Title: "Development ACS API"
+      ACS__API__Description: "This page provides an interactive documentation of the development ACS API."
+      ACS__API__ErrorDocumentationUri: "https://github.com/BanditBanking/bandit-acs/blob/master/documentation/errors.md#"
+      ACS__Twilio__AccountSid: ""
+      ACS__Twilio__MessagingServiceSid: ""
+      ACS__Twilio__AuthToken: ""
+      ACS__Mail__Smtp: ""
+      ACS__Mail__Port: 465
+      ACS__Mail__From: ""
+      ACS__Mail__Password: ""
+      ASPNETCORE_URLS: "https://+:443;"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: "/certs/tristesse.pfx"
+      Logging__LogLevel__Default: "Debug"
+    depends_on:
+      - postgres
+      - mongo
+    volumes:
+      - ../certs/:/certs/
+    networks:
+      - banknet
+      - internal
+
+  postgres:
+    image: postgres:15.2-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=bandit 
+      - POSTGRES_PASSWORD=orF9YuPWVajej5tC6cfiro94BoxrzsoE
+    ports:
+      - '5432:5432'
+    networks:
+      - internal
+  
+  mongo:
+    image: mongo:6.0.5
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=bandit
+      - MONGO_INITDB_ROOT_PASSWORD=KQVYJnxcMXvQ5joLef524V97zRkMMT3N
+    ports:
+      - '27017:27017'
+    networks:
+      - internal
+
+networks: 
+  banknet: 
+    name: bandit-banknet
+    external: true
+  internal:
+    name: acs-internal
+
